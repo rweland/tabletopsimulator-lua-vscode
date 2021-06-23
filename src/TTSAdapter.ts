@@ -12,6 +12,7 @@ import {
   ViewColumn,
   Range,
   TextEditor,
+  WorkspaceFolder
 } from 'vscode';
 import { join, posix } from 'path';
 import bundle from 'luabundle';
@@ -146,13 +147,13 @@ export default class TTSAdapter {
     this.server.listen(port, 'localhost'); // Open Server
   }
 
-  private isTempFolder(dir: Uri) {
+  private isTempFolder(dir: WorkspaceFolder) {
     if (dir.uri.fsPath === this.tempUri.fsPath) {
       return true;
     }
 
     try {
-      let resolvedSymlink = readlinkSync(dir)
+      let resolvedSymlink = readlinkSync(dir.uri.fsPath)
       return resolvedSymlink === this.tempUri.fsPath;
     }
     catch (reason: any) {
