@@ -17,7 +17,7 @@ import { join, posix } from 'path';
 import bundle from 'luabundle';
 import { NoBundleMetadataError } from 'luabundle/errors';
 import { resolveModule } from 'luabundle/bundle/process';
-import { readFileSync } from 'fs';
+import { readFileSync, readlinkSync } from 'fs';
 
 import parse from './bbcode/tabletop';
 import { tempFolder, docsFolder, FileHandler } from './filehandler';
@@ -146,12 +146,26 @@ export default class TTSAdapter {
     this.server.listen(port, 'localhost'); // Open Server
   }
 
+  private isTempFolder(dir: Uri) {
+    if (dir.uri.fsPath === this.tempUri.fsPath) {
+      return true;
+    }
+
+    try {
+      let resolvedSymlink = readlinkSync(dir)
+      return resolvedSymlink === this.tempUri.fsPath;
+    }
+    catch (reason: any) {
+      return false;
+    }
+  }
+
   /**
    * Retrieves scripts from currently open savegame
    */
   public async getScripts() {
     const vsFolders = ws.workspaceFolders;
-    if (!vsFolders || vsFolders.findIndex((dir) => dir.uri.fsPath === this.tempUri.fsPath) === -1) {
+    if (!vsFolders || vsFolders.findIndex((dir) => this.isTempFolder(dir)) === -1) {
       ws.updateWorkspaceFolders(vsFolders ? vsFolders.length : 0, null, { uri: this.tempUri });
     }
     TTSAdapter.sendToTTS(TxMsgType.GetScripts);
